@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html class=" -webkit-">
+    <head>
+        <meta charset="UTF-8">
+        <link rel="stylesheet" type="text/css" href="chromecast.css">
+        <script src="https://www.gstatic.com/cast/js/receiver/1.0/cast_receiver.js"></script>
+        <script src="//ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
+        <script type="text/javascript">
+	cast.receiver.logger.setLevelValue(0);
+	
+	// Initialize and start the media playing receiver
+	var receiver = new cast.receiver.Receiver(
+		'079e78b4-e4c0-4943-8353-d7b140f2c677_1', 
+		[cast.receiver.RemoteMedia.NAMESPACE, 'com.hudl.hudroid.chromecast'],
+		"",
+		5);
+		
+	var channelHandler = new cast.receiver.ChannelHandler('com.hudl.hudroid.chromecast');
+	channelHandler.addChannelFactory(receiver.createChannelFactory('com.hudl.hudroid.chromecast'));
+	channelHandler.addEventListener(cast.receiver.Channel.EventType.MESSAGE, onMessage.bind(this));
+	
+	var context;
+	var canvas;
+	var laserPointer;
+	var lastX;
+	var lastY;
+	var i = 0;
+	
+	function onMessage(event) {
+		switch (event.message.messageType) {
+		case 0:
+			if (!canvas || !context || !laserPointer) {
+				canvas = document.getElementById("c");
+				context = canvas.getContext('2d');
+				laserPointer = new Image();
+				laserPointer.src = 'http://www.bclymer.com/laserpointer.png';		
+			}
+			
+			context.clearRect(lastX, lastY, laserPointer.width, laserPointer.height);
+			lastX = (event.message.data.x * canvas.width) - (laserPointer.width / 2);
+			lastY = (event.message.data.y * canvas.height) - (laserPointer.height / 2);
+			context.drawImage(laserPointer, lastX, lastY);
+			break;
+		case 1:
+			var videoElement = $('#vid');
+			videoElement[0].currentTime = event.message.data.time;
+			console.log("Current time set to " + event.message.data.time);
+			if (event.message.data.doneSeeking) {
+				videoElement[0].play();
+				video
+			}
+			break;		
+		}
+	 }
+		
+	var remoteMedia = new cast.receiver.RemoteMedia();
+	remoteMedia.addChannelFactory(receiver.createChannelFactory(cast.receiver.RemoteMedia.NAMESPACE));
+	
+	receiver.start();
+            
+	window.addEventListener('load', function() {
+		console.log("window.load()");
+		var videoElement = $('#vid');
+		var videoDiv = $('videoDiv');
+		var imageDiv = $('#wrapper');
+		var pauseDiv = $('#pause');
+		var overlay = $('#overlay');
+		var breakdownDataTable = $('#breakdownData');
+		var clipAndAngle = $('#clip-and-angle');
+		var playlist = $('#playlist');
+		
+		remoteMedia.setMediaElement(videoElement[0]);
+		
+		videoElement[0].addEventListener("loadeddata", function() {
+			videoDiv.hide();
+			var st = remoteMedia.getStatus()['state'];
+			if (remoteMedia.getStatus()['content_info']) {
+				if (remoteMedia.getStatus()['content_info']['breakdownData']) {
+					overlay.show();
+					var breakdownData = remoteMedia.getStatus()['content_info']['breakdownData'];
+					breakdownDataTable.empty();
+					breakdownDataTable.append('<tr></tr><tr style="font-weight:bold"></tr>');
+					for (var i = 0; i < breakdownData.length; i++) {
+						for (key in breakdownData[i]) {
+							$(breakdownDataTable.find("tr")[0]).append("<td>" + key + "</td>");
+							$(breakdownDataTable.find("tr")[1]).append("<td>" + breakdownData[i][key] + "</td>");
+						}
+					}
+				}
+			}
+		});
+		
+		videoElement[0].addEventListener("loadstart", function() {
+			imageDiv.fadeIn(200);
+			videoDiv.hide();
+			overlay.hide();
+			if (remoteMedia.getStatus()['content_info']) {
+				playlist.text(remoteMedia.getStatus()['content_info']['playlistName']);
+				clipAndAngle.text("Clip #" + remoteMedia.getStatus()['content_info']['clipNumber'] + " - " + remoteMedia.getStatus()['content_info']['angleName']);
+			}
+		});
+		
+		videoElement[0].addEventListener("play", function() {
+			pauseDiv.fadeOut(500);
+			imageDiv.fadeOut(200);
+			channelHandler.getChannels()[0].send("Playback started")
+		});
+		
+		videoElement[0].addEventListener("pause", function() {
+			pauseDiv.fadeIn(200);
+		});
+		
+		videoElement[0].addEventListener("waiting", function() {
+			imageDiv.fadeIn(200);
+		});
+		
+		videoElement[0].addEventListener("ended", function() {
+			channelHandler.getChannels()[0].send("1")
+		});
+	});
+        </script>
+        <title>Hudl Chromecast Player</title>
+    </head>
+    <body>
+        <div id="videoDiv">
+            <video id="vid" style="position:absolute;top:0;left:0;height:100%;width:100%"></video>
+            <canvas id="c"></canvas>
+            <div id="overlay" class="overlay">
+                <table id="breakdownData">
+                </table>
+            </div>
+        </div>
+        <div id="pause" class="pause" style="display:none">
+            <img src="pause.png" style="opacity:0.5" alt="pause">
+        </div>
+        <div id="wrapper" class="wrapper">
+            <div class="logo-wrapper">
+                <img class="logo" src="hudl_light_large_trans.png" alt="Hudl" />
+            </div>
+            <ul class="drops">
+                <li></li>
+                <li></li>
+                <li></li>
+                <li></li>
+                <li></li>
+            </ul>
+            <div id="clip-data">
+                <div id="playlist"></div>
+                <div id="clip-and-angle"></div>
+            </div>
+        </div>
+    </body>
+</html>
