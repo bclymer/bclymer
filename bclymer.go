@@ -9,9 +9,14 @@ import (
 )
 
 func main() {
-	quarto.StartServer("quarto")
 	bclymer.StartServer("bclymer")
-	aboutme.StartServer("me")
+
+	qRedis := quarto.StartServer("quarto")
+	defer qRedis.Quit()
+
+	aRedis := aboutme.StartServer("me")
+	defer aRedis.Quit()
+
 	err := http.ListenAndServe(":80", nil)
 	if err != nil {
 		log.Print("ListenAndServe:", err)
