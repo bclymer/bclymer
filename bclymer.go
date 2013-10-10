@@ -9,13 +9,12 @@ import (
 )
 
 func main() {
-	bclymer.StartServer("bclymer")
+	bclymer.StartServer()
 
 	qRedis := quarto.StartServer("quarto")
 	defer qRedis.Quit()
 
-	aRedis := aboutme.StartServer("me")
-	defer aRedis.Quit()
+	aboutme.StartServer()
 
 	err := http.ListenAndServe(":80", nil)
 	if err != nil {
