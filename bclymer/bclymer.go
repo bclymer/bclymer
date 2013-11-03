@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"time"
+	"io/ioutil"
 )
 
 const (
@@ -24,7 +25,7 @@ func helpTime(w http.ResponseWriter, r *http.Request) {
 }
 
 func reportIP(w http.ResponseWriter, r *http.Request) {
-	file, err := os.OpenFile("rasp.txt", O_RDWR|O_APPEND, 0660)
+	file, err := os.OpenFile("rasp.txt", os.O_RDWR|os.O_APPEND, 0660)
 	defer file.Close()
 	if err != nil {
 		return
@@ -33,7 +34,7 @@ func reportIP(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		return
 	}
-	file.WriteString(body + "\n")
+	file.WriteString(string(body))
 }
 
 func main() {
