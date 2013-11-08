@@ -1,23 +1,16 @@
-package bclymer
-
-//package main
+package main
 
 import (
 	"fmt"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
 	"time"
-	"io/ioutil"
-)
-
-const (
-	urlPrefix    = ""
-	folderPrefix = "bclymer/"
 )
 
 func handler(w http.ResponseWriter, r *http.Request) {
-	http.ServeFile(w, r, folderPrefix+"static/index.html")
+	http.ServeFile(w, r, "static/index.html")
 }
 
 func helpTime(w http.ResponseWriter, r *http.Request) {
@@ -38,14 +31,11 @@ func reportIP(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
-	http.HandleFunc(urlPrefix+"/", handler)
-	http.HandleFunc(urlPrefix+"/currentTime.php", helpTime)
-	http.HandleFunc(urlPrefix+"/reportip", reportIP)
+	http.HandleFunc("/", handler)
+	http.HandleFunc("/currentTime.php", helpTime)
+	http.HandleFunc("/reportip", reportIP)
 
-	http.Handle("/"+folderPrefix+"static/", http.StripPrefix("/"+folderPrefix+"static", http.FileServer(http.Dir(folderPrefix+"static"))))
+	http.Handle("/static/", http.StripPrefix("/static", http.FileServer(http.Dir("static"))))
 	log.Println("bClymer is running...")
-}
-
-func StartServer() {
-	main()
+	http.ListenAndServe(":42125", nil)
 }
